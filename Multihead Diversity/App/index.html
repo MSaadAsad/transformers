@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Image Viewer</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <select id="size-select">
+        {% for size in sizes %}
+        <option value="{{ size }}">Size: {{ size }}</option>
+        {% endfor %}
+    </select>
+    <select id="dropout-select">
+        {% for dropout in dropouts %}
+        <option value="{{ dropout }}">Dropout: {{ dropout }}</option>
+        {% endfor %}
+    </select>
+    <button onclick="loadImages()">Load Images</button>
+    <div>
+        <img id="image-display" src="" alt="Image will appear here...">
+    </div>
+    <input type="range" id="image-slider" min="0" max="29" step="1" value="0" oninput="showImage(this.value)">
+    <button onclick="startSlideshow()">Play</button>
+    <script>
+        let images = [];
+        let currentImageIndex = 0;
+        let intervalId = null;
+
+        function loadImages() {
+            const size = document.getElementById('size-select').value;
+            const dropout = document.getElementById('dropout-select').value.replace(".", "_"); // Convert decimal to underscore for folder naming
+            $.getJSON(`/images/${size}/${dropout}`, function(data) { // Correct API endpoint
+                images = data;
+                showImage(0);  // Show the first image
+                document.getElementById('image-slider').max = images.length - 1;
+            });
+        }
+
+        function showImage(index) {
+            const size = document.getElementById('size-select').value;
+            const dropout = document.getElementById('dropout-select').value.replace(".", "_");
+            const imagePath = `/image/${size}/${dropout}/${images[index]}`; // Correct API endpoint
+            document.getElementById('image-display').src = imagePath;
+            currentImageIndex = index;
+        }
+
+        function startSlideshow() {
+            if (intervalId !== null) {
+                clearInterval(intervalId);
+                intervalId = null;
+            } else {
+                intervalId = setInterval(() => {
+                    let newIndex = (currentImageIndex + 1) % images.length;
+                    showImage(newIndex);
+                    document.getElementById('image-slider').value = newIndex;
+                }, 1000);  // Change image every second
+            }
+        }
+    </script>
+</body>
+</html>
